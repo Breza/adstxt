@@ -3,52 +3,25 @@
 adstxt
 ======
 
-The goal of adstxt is to ...
+Fraud is a major problem in online advertising. The [ads.txt standard](https://iabtechlab.com/wp-content/uploads/2017/09/IABOpenRTB_Ads.txt_Public_Spec_V1-0-1.pdf) (PDF) allows publishers to add a layer of trust by publishing a list of all ad networks in which they participate. Publishers post a specially formatted text file to domain.com/ads.txt (for example nytimes.com/ads.txt, washingtonpost.com/ads.txt, etc). That file
 
 Installation
 ------------
 
-You can install the released version of adstxt from [CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("adstxt")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+This package is not available on CRAN. You can install the latest version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("Breza/adstxt")
 ```
 
-Example
--------
+Usage
+-----
 
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-## basic example code
-```
-
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+The function adstxt() is the heart of the package. Given a URL, it will return a tibble with data from the ads.txt file for that site. If no ads.txt file is found, it will return `NA`.
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+nyt <- adstxt("http://nytimes.com")
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub!
-
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+This project is under active development, so feel free to lend a hand! There's a [Contributor Code of Conduct](CODE_OF_CONDUCT.md) to help keep things civil.
