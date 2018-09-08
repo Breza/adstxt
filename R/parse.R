@@ -1,20 +1,3 @@
-wp <- "washingtontimes.com/ads.txt" %>%
-  httr::GET() %>%
-  httr::content(as = "text", encoding = "UTF-8") %>%
-  textConnection() %>%
-  readLines(warn = FALSE) %>%
-  grep("^[^#]", ., value = TRUE) %>% # Remove lines that start with #
-  stringi::stri_trim_both() %>%
-  .[which(. != "")] # Remove blank lines
-
-library(conflicted)
-library(tidyverse)
-library(purrr)
-library(stringi)
-library(httr)
-filter <- dplyr::filter
-
-
 # When given a URL...
 #   Confirm it is a valid URL using regex
 #   Strip subdomains (per IAB standard)
@@ -73,22 +56,44 @@ parse_adstxt_line <- function(ads_txt_line) {
 }
 
 
-validate_url <- function(url) {
-  stringi::stri_detect(url,
-                       regex =
-                         "(?:\\S+(?::(?:\\S)*)?@)?(?:(?:[a-z0-9\u00a1-\uffff](?:-)*)*(?:[a-z0-9\u00a1-\uffff])+)(?:\\.(?:[a-z0-9\u00a1-\uffff](?:-)*)*(?:[a-z0-9\u00a1-\uffff])+)*(?:\\.(?:[a-z0-9\u00a1-\uffff]){2,})(?::(?:\\d){2,5})?(?:/(?:\\S)*)?$")
-}
-
-
 parse_adstxt_site <- function(url) {
-  # Validate url as valid URL
-  if(!validate_url(url)) {
-    stop(paste(url, "is not a valid URL"))
+  # Validate url is valid URL
+  if (!validate_url(url)) {
+    return(data.frame(
+      data.frame(
+        advertiser = NA,
+        account_id = NA,
+        relationship = NA,
+        certification_id = NA,
+        url = url,
+        comment = "URL is not valid",
+        stringsAsFactors = FALSE
+      )
+    ))
   }
 
   # If url does not contain "ads.txt" append it to the end of url
-  if(stringi::stri_detect_fixed(url, "ads.txt")) {
-    url <- paste0(url, "ads.txt")
+  if (!stringi::stri_detect_fixed(url, "ads.txt")) {
+    if (stringi::stri_sub("url", -1L, -1L) == "/") {
+      url <- paste0(url, "ads.txt")
+    }
+    else {
+      url <- paste0(url, "/ads.txt")
+    }
+  }
+
+  if (!RCurl::url.exists(url)) {
+    return(data.frame(
+      data.frame(
+        advertiser = NA,
+        account_id = NA,
+        relationship = NA,
+        certification_id = NA,
+        url = url,
+        comment = "URL not found, site may not have an ads.txt file",
+        stringsAsFactors = FALSE
+      )
+    ))
   }
 
   url %>%
@@ -100,6 +105,15 @@ parse_adstxt_site <- function(url) {
     stringi::stri_trim_both() %>%
     .[which(. != "")] %>%  # Remove blank lines
     purrr::map_dfr(parse_adstxt_line) %>%
-    filter(!(is.na(advertiser) && is.na(account_id) && is.na(relationship) && is.na(certification_id))) %>%
-    mutate(url = url)
+    dplyr::filter(!(is.na(advertiser) && is.na(account_id) && is.na(relationship) && is.na(certification_id))) %>%
+    dplyr::mutate(relationship = stringi::stri_trans_toupper(relationship)) %>%
+    dplyr::mutate(url = url, comment = NA_character_)
+}
+
+
+adstxt <- function(urls) {
+  # Remove duplicate URLs
+  urls <- urls[!duplicated(urls)]
+
+  purrr::map_dfr(urls, parse_adstxt_site)
 }
